@@ -155,11 +155,8 @@ namespace LMSLamps.Game
                 // Create the replacement component
                 var replacement = __instance.gameObject.AddComponent<GlareMaterialGrabber>();
 
-                // Copy glareObjects array from proxy to replacement
-                replacement.glareObjects = __instance.glareObjects;
-
-                // Copy glare type selection from proxy to replacement
-                replacement.glareType = (GlareType)__instance.glareType;
+                // Copy glare transform from proxy to replacement
+                replacement.glare = __instance.glare;
 
                 // Destroy the proxy component
                 Object.Destroy(__instance);

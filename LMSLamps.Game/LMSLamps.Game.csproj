@@ -26,6 +26,7 @@
     <Reference Include="UnityEngine.AudioModule" />
     <Reference Include="Newtonsoft.Json" />
     <Reference Include="DV.Simulation" />
+    <Reference Include="DV.ThingTypes" />
     <Reference Include="DV.CabControls.Spec"/>
   </ItemGroup>
   <ItemGroup>

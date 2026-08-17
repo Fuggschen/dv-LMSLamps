@@ -1,33 +1,17 @@
-using System.Linq;
 using UnityEngine;
 
 namespace LMSLamps.Game
 {
-    public enum GlareType
-    {
-        HeadlightsGlare,
-        TaillightsGlare
-    }
-
     public class GlareMaterialGrabber : MonoBehaviour
     {
-        private const string TINT_COLOR_PROPERTY = "_TintColor";
-
         // Configuration from proxy
-        public GameObject[]? glareObjects;
-        public GlareType glareType = GlareType.HeadlightsGlare;
+        public Transform? glare;
 
         // Runtime state
+        private Renderer? _glareRenderer;
         private Material? _glareMaterial;
         private Lantern? _lantern;
-        private int _lastColorIndex = -1; 
-
-        // Transition state
-        private bool _isGlareTransitioning = false;
-        private float _glareTransitionStartTime = 0f;
-        private Color _startGlareTintColor;
-        private Color _targetGlareTintColor;
-        private const float TransitionDuration = 1f;
+        private int _lastColorIndex = -1;
 
         // Flickering state
         private float _flickerOffset;
@@ -35,164 +19,131 @@ namespace LMSLamps.Game
         private const float FlickerIntensityMin = 0.8f;
         private const float FlickerIntensityMax = 1.0f;
 
+        // Cached glare source
+        private static Renderer? s_glareSource;
+        private static Renderer GlareSource
+        {
+            get
+            {
+                if (s_glareSource == null)
+                {
+                    DV.Globals.G.Types.TryGetLivery("LocoDE2", out var de2);
+                    s_glareSource = de2.interiorPrefab.transform
+                        .Find("DashCluster/HeadlightsFront/L_Headlights/glare")
+                        .GetComponent<Renderer>();
+                }
+                return s_glareSource;
+            }
+        }
+
+        private static Material? s_glareMat;
+        private static Material GlareMat
+        {
+            get
+            {
+                if (s_glareMat == null)
+                {
+                    s_glareMat = new Material(GlareSource.sharedMaterial);
+                    s_glareMat.SetFloat("_FadeoutPower", 2.2f);
+                    s_glareMat.SetFloat("_LightAtten", 0.7f);
+                    s_glareMat.SetFloat("_MaxAtten", 0.8f);
+                }
+                return s_glareMat;
+            }
+        }
+
         public void Start()
         {
             try
             {
-                GrabAndApplyMaterial();
-
                 // Find the Lantern component on this GameObject
                 _lantern = GetComponent<Lantern>();
                 if (_lantern == null)
                 {
-                    Main.Warning($"No Lantern component found on {gameObject.name}, glare tint color will not update");
+                    Main.Warning($"No Lantern component found on {gameObject.name}, glare will not update");
                 }
 
                 // Initialize flicker offset with a random value for variety
                 _flickerOffset = Random.Range(0f, 100f);
+
+                if (glare != null)
+                {
+                    CreateGlare();
+                }
+                else
+                {
+                    Main.Warning($"No glare transform assigned on {gameObject.name}");
+                }
             }
             catch (System.Exception ex)
             {
-                Main.Error($"Failed to apply glare material on {gameObject.name}: {ex}");
+                Main.Error($"Failed to apply glare on {gameObject.name}: {ex}");
             }
         }
 
-        public void Update()
+        private void CreateGlare()
         {
-            // Calculate flicker multiplier
-            float flickerMultiplier = 1f;
-            if (_lantern != null && _lantern.GetColorIndex() >= 1)
-            {
-                flickerMultiplier = GetFlickerMultiplier();
-            }
+            if (glare == null) return;
 
-            // Handle glare tint color transition
-            if (_isGlareTransitioning && _glareMaterial != null)
-            {
-                // Calculate transition progress
-                float elapsedTime = Time.time - _glareTransitionStartTime;
-                float t = Mathf.Clamp01(elapsedTime / TransitionDuration);
+            // Instantiate the glare renderer from the DE2 headlight as a child of the glare transform
+            var glareInstance = Instantiate(GlareSource, glare);
+            glareInstance.transform.localPosition = Vector3.zero;
+            glareInstance.transform.localRotation = Quaternion.identity;
+            glareInstance.transform.localScale = Vector3.one;
+            glareInstance.gameObject.SetActive(false);
 
-                // Lerp the tint color
-                Color currentTintColor = Color.Lerp(_startGlareTintColor, _targetGlareTintColor, t);
+            // Create our own material instance
+            _glareMaterial = new Material(GlareMat);
+            glareInstance.sharedMaterial = _glareMaterial;
 
-                // Apply flickering to the tint color
-                currentTintColor *= flickerMultiplier;
-
-                // Apply the lerped tint color
-                if (_glareMaterial.HasProperty(TINT_COLOR_PROPERTY))
-                {
-                    _glareMaterial.SetColor(TINT_COLOR_PROPERTY, currentTintColor);
-                }
-
-                // Check if transition is complete
-                if (t >= 1f)
-                {
-                    _isGlareTransitioning = false;
-                    
-                    // If transitioning to OFF state, disable glare objects after transition completes
-                    if (_lantern != null && _lantern.GetColorIndex() == 0)
-                    {
-                        EnableGlareObjects(false);
-                    }
-                }
-            }
-            else if (_lantern != null && _lantern.GetColorIndex() >= 1 && _glareMaterial != null)
-            {
-                // Apply flickering when not transitioning but light is on
-                ApplyFlickeringToGlare(flickerMultiplier);
-            }
-
-            // Start new transition if the lantern color has changed
-            if (_lantern != null && _glareMaterial != null)
-            {
-                int currentColorIndex = _lantern.GetColorIndex();
-                if (currentColorIndex != _lastColorIndex)
-                {
-                    _lastColorIndex = currentColorIndex;
-                    StartGlareTransition();
-                }
-            }
-        }
-
-        private void GrabAndApplyMaterial()
-        {
-            // Check if glare objects are assigned
-            if (glareObjects == null || glareObjects.Length == 0)
-            {
-                Main.Warning($"No glare objects are assigned on {gameObject.name}");
-                return;
-            }
-
-            // Determine material name based on glare type
-            string materialName = glareType.ToString();
-
-            // Find the material from the game's resource pool
-            Material? baseMaterial = FindMaterial(materialName);
-            if (baseMaterial == null)
-            {
-                Main.Error($"Could not find material '{materialName}' in material pool");
-                return;
-            }
-
-            // Create an instance of the material so we can modify it without affecting other objects
-            _glareMaterial = new Material(baseMaterial);
-
-            // Apply the material to all glare objects and disable them initially
-            foreach (var glareObject in glareObjects)
-            {
-                if (glareObject == null)
-                {
-                    Main.Warning($"Null glare object found in array on {gameObject.name}");
-                    continue;
-                }
-
-                // Get the renderer component
-                Renderer glareRenderer = glareObject.GetComponent<Renderer>();
-                if (glareRenderer == null)
-                {
-                    Main.Warning($"Could not find Renderer component on glare object '{glareObject.name}'");
-                    continue;
-                }
-
-                // Apply the material instance to the renderer
-                glareRenderer.material = _glareMaterial;
-                
-                // Disable the glare object initially (no glare flash on placement)
-                glareObject.SetActive(false);
-            }
+            _glareRenderer = glareInstance;
 
             // Set initial tint color
             UpdateGlareTintColor();
         }
 
-        private void StartGlareTransition()
+        public void Update()
         {
-            if (_glareMaterial == null || _lantern == null)
+            if (_lantern == null || _glareRenderer == null || _glareMaterial == null)
                 return;
 
-            // Get current tint color as start color
-            if (_glareMaterial.HasProperty(TINT_COLOR_PROPERTY))
+            int currentColorIndex = _lantern.GetColorIndex();
+
+            // Handle color change
+            if (currentColorIndex != _lastColorIndex)
             {
-                _startGlareTintColor = _glareMaterial.GetColor(TINT_COLOR_PROPERTY);
-            }
-            else
-            {
-                _startGlareTintColor = Color.white;
+                _lastColorIndex = currentColorIndex;
+
+                if (currentColorIndex >= 1)
+                {
+                    // Turn on glare
+                    _glareRenderer.gameObject.SetActive(true);
+                    UpdateGlareTintColor();
+                }
+                else
+                {
+                    // Turn off glare
+                    _glareRenderer.gameObject.SetActive(false);
+                }
             }
 
-            // Get target color from lantern
-            _targetGlareTintColor = GetLanternEmissionColor();
-
-            // If transitioning to ON state (color index >= 1), enable glare objects
-            if (_lantern.GetColorIndex() >= 1)
+            // Apply flickering when light is on
+            if (currentColorIndex >= 1)
             {
-                EnableGlareObjects(true);
-            }
+                float flickerMultiplier = 1f;
+                if (_lantern.useFlicker)
+                {
+                    flickerMultiplier = GetFlickerMultiplier();
+                }
 
-            // Start transition
-            _isGlareTransitioning = true;
-            _glareTransitionStartTime = Time.time;
+                Color baseColor = GetLanternEmissionColor();
+                Color flickeredColor = baseColor * flickerMultiplier;
+
+                if (_glareMaterial.HasProperty("_TintColor"))
+                {
+                    _glareMaterial.SetColor("_TintColor", flickeredColor);
+                }
+            }
         }
 
         private void UpdateGlareTintColor()
@@ -200,49 +151,13 @@ namespace LMSLamps.Game
             if (_glareMaterial == null || _lantern == null)
                 return;
 
-            // Get the current color from the lantern
-            Color emissionColor = GetLanternEmissionColor();
-            
-            // If lantern is off, use transparent black for glare
-            if (_lantern.GetColorIndex() == 0)
+            Color emissionColor = _lantern.GetColorIndex() == 0
+                ? Color.clear
+                : GetLanternEmissionColor();
+
+            if (_glareMaterial.HasProperty("_TintColor"))
             {
-                emissionColor = Color.clear; // Fully transparent
-            }
-
-            // Check if the material has the tint color property
-            if (_glareMaterial.HasProperty(TINT_COLOR_PROPERTY))
-            {
-                // Set the tint color immediately (used for initial setup)
-                _glareMaterial.SetColor(TINT_COLOR_PROPERTY, emissionColor);
-            }
-            else
-            {
-                Main.Warning($"Material '{glareType}' does not have property '{TINT_COLOR_PROPERTY}'");
-            }
-        }
-
-        private float GetFlickerMultiplier()
-        {
-            // Use Perlin noise for smooth, natural-looking flicker
-            float perlinValue = Mathf.PerlinNoise(Time.time * FlickerSpeed, _flickerOffset);
-            
-            // Map Perlin noise (0-1) to flicker intensity range
-            return Mathf.Lerp(FlickerIntensityMin, FlickerIntensityMax, perlinValue);
-        }
-
-        private void ApplyFlickeringToGlare(float flickerMultiplier)
-        {
-            if (_glareMaterial == null || _lantern == null)
-                return;
-
-            // Get the base tint color from the lantern emission
-            Color baseTintColor = GetLanternEmissionColor();
-            Color flickeredColor = baseTintColor * flickerMultiplier;
-
-            // Apply the flickered tint color
-            if (_glareMaterial.HasProperty(TINT_COLOR_PROPERTY))
-            {
-                _glareMaterial.SetColor(TINT_COLOR_PROPERTY, flickeredColor);
+                _glareMaterial.SetColor("_TintColor", emissionColor);
             }
         }
 
@@ -259,48 +174,20 @@ namespace LMSLamps.Game
             if (currentMaterial == null)
                 return Color.white;
 
-            // Try to get the emission color from common emission property names
             if (currentMaterial.HasProperty("_EmissionColor"))
-            {
                 return currentMaterial.GetColor("_EmissionColor");
-            }
             else if (currentMaterial.HasProperty("_EmissiveColor"))
-            {
                 return currentMaterial.GetColor("_EmissiveColor");
-            }
             else if (currentMaterial.HasProperty("_Emission"))
-            {
                 return currentMaterial.GetColor("_Emission");
-            }
 
-            // If no emission property found, return white as fallback
             return Color.white;
         }
 
-        private void EnableGlareObjects(bool enabled)
+        private float GetFlickerMultiplier()
         {
-            if (glareObjects == null)
-                return;
-
-            foreach (var glareObject in glareObjects)
-            {
-                if (glareObject != null)
-                {
-                    glareObject.SetActive(enabled);
-                }
-            }
-        }
-
-        private Material? FindMaterial(string materialName)
-        {
-            var allMaterials = Resources.FindObjectsOfTypeAll<Material>();
-            var material = allMaterials.FirstOrDefault(m => m.name == materialName);
-
-            if (material == null)
-            {
-                return null;
-            }
-            return material;
+            float perlinValue = Mathf.PerlinNoise(Time.time * FlickerSpeed, _flickerOffset);
+            return Mathf.Lerp(FlickerIntensityMin, FlickerIntensityMax, perlinValue);
         }
     }
 }
