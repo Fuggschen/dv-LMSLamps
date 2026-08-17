@@ -1,0 +1,22 @@
+ManifestFileVersion: 0
+CRC: 3099516092
+AssetBundleManifest:
+  AssetBundleInfos:
+    Info_0:
+      Name: bwl
+      Dependencies: {}
+    Info_1:
+      Name: bro
+      Dependencies: {}
+    Info_2:
+      Name: bwo
+      Dependencies: {}
+    Info_3:
+      Name: wro
+      Dependencies: {}
+    Info_4:
+      Name: wwl
+      Dependencies: {}
+    Info_5:
+      Name: wwo
+      Dependencies: {}

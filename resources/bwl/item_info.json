@@ -1,0 +1,11 @@
+{
+    "Name": "LMS Lamp (Black) White Lens - LED",
+    "Description": "Modern LED Lamp used for marking the front of Train",
+    "Amount": 20,
+    "Price": 4000,
+    "AssetBundleName": "bwl",
+    "PrefabPath": "Assets/Prefabs/Black Body/White LED/Base.prefab",
+    "IconStandardPath": "Assets/Sprites/bwl.png",
+    "IconDroppedPath": "Assets/Sprites/bwl-dropped.png.png",
+	"ShelfPrefabPath": "Assets/Prefabs/Black Body/White LED/ShelfItem.prefab"
+}

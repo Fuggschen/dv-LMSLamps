@@ -1,0 +1,11 @@
+{
+    "Name": "LMS Lamp (Black) Red Lens - Oil Wick",
+    "Description": "Old Oil Lamp used for marking the end of Train",
+    "Amount": 20,
+    "Price": 2000,
+    "AssetBundleName": "bro",
+    "PrefabPath": "Assets/Prefabs/Black Body/Red Oil/Base.prefab",
+    "IconStandardPath": "Assets/Sprites/bro.png",
+    "IconDroppedPath": "Assets/Sprites/bro-dropped.png",
+	"ShelfPrefabPath": "Assets/Prefabs/Black Body/Red Oil/ShelfItem.prefab"
+}

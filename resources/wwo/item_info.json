@@ -1,0 +1,11 @@
+{
+    "Name": "LMS Lamp (White) White Lens - Oil Wick",
+    "Description": "Old Oil Lamp used for marking the front of Train",
+    "Amount": 20,
+    "Price": 2000,
+    "AssetBundleName": "wwo",
+    "PrefabPath": "Assets/Prefabs/White Body/White Oil/Base.prefab",
+    "IconStandardPath": "Assets/Sprites/wwo.png",
+    "IconDroppedPath": "Assets/Sprites/wwo-dropped.png",
+	"ShelfPrefabPath": "Assets/Prefabs/White Body/White Oil/ShelfItem.prefab"
+}

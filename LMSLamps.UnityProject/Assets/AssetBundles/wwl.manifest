@@ -1,0 +1,51 @@
+ManifestFileVersion: 0
+CRC: 1471322749
+Hashes:
+  AssetFileHash:
+    serializedVersion: 2
+    Hash: 819f4232d4ac62d2c17e4dc3d4f87afd
+  TypeTreeHash:
+    serializedVersion: 2
+    Hash: 2416c3208be37c3181beef917adbdaba
+HashAppended: 0
+ClassTypes:
+- Class: 1
+  Script: {instanceID: 0}
+- Class: 4
+  Script: {instanceID: 0}
+- Class: 21
+  Script: {instanceID: 0}
+- Class: 23
+  Script: {instanceID: 0}
+- Class: 28
+  Script: {instanceID: 0}
+- Class: 33
+  Script: {instanceID: 0}
+- Class: 43
+  Script: {instanceID: 0}
+- Class: 48
+  Script: {instanceID: 0}
+- Class: 64
+  Script: {instanceID: 0}
+- Class: 65
+  Script: {instanceID: 0}
+- Class: 108
+  Script: {instanceID: 0}
+- Class: 114
+  Script: {fileID: 1042800216, guid: 7476d6f42af8fe44ea4691312a4b3bd7, type: 3}
+- Class: 114
+  Script: {fileID: 1368475075, guid: 3a27498095bb60446926617ad247eab3, type: 3}
+- Class: 114
+  Script: {fileID: -1353223136, guid: 7476d6f42af8fe44ea4691312a4b3bd7, type: 3}
+- Class: 115
+  Script: {instanceID: 0}
+- Class: 213
+  Script: {instanceID: 0}
+SerializeReferenceClassIdentifiers: []
+Assets:
+- Assets/Sprites/wwl-dropped.png
+- Assets/Sprites/wwl.png
+- Assets/Prefabs/White Body/White LED/ShelfItem.prefab
+- Assets/Prefabs/White Body/White LED/Item.prefab
+- Assets/Prefabs/White Body/White LED/Base.prefab
+Dependencies: []
