@@ -3,7 +3,7 @@
 	"Version": "1.0.0",
 	"DisplayName": "LMSLamps",
 	"Author": "Emerald, Fuggschen",
-	"HomePage": "https://www.nexusmods.com/derailvalley/mods/1346",
+	"HomePage": "https://www.nexusmods.com/derailvalley/mods/1649",
 	"Repository": "https://raw.githubusercontent.com/Fuggschen/dv-LMSLamps/refs/heads/master/resources/repository.json",
 	"AssemblyName": "LMSLamps.Game.dll",
 	"EntryMethod": "LMSLamps.Game.Main.Load",
